@@ -6,7 +6,6 @@ package dbx
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 )
 
@@ -96,7 +95,10 @@ func (s *SelectQuery) PreFragment(fragment string) *SelectQuery {
 	return s
 }
 
-// PostFragment sets SQL fragment that should be appended at the end of the select query.
+// PostFragment sets SQL fragment that should be appended at the end of the main select query.
+//
+// If there is "UNION"/"UNION ALL" clause then the extra UNION queries
+// are appended after the PostFragment.
 func (s *SelectQuery) PostFragment(fragment string) *SelectQuery {
 	s.postFragment = fragment
 	return s
@@ -305,9 +307,7 @@ func (s *SelectQuery) Build() *Query {
 		sql += " " + s.postFragment
 	}
 
-	if union := qb.BuildUnion(s.union, params); union != "" {
-		sql = fmt.Sprintf("(%v) %v", sql, union)
-	}
+	sql = qb.CombineUnion(sql, qb.BuildUnion(s.union, params))
 
 	query := s.builder.NewQuery(sql).Bind(params).WithContext(s.ctx)
 

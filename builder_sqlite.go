@@ -10,10 +10,60 @@ import (
 	"strings"
 )
 
+var _ QueryBuilder = &SqliteQueryBuilder{}
+
+// SqliteQueryBuilder is the query builder for SQLite databases.
+type SqliteQueryBuilder struct {
+	*BaseQueryBuilder
+}
+
+// BuildUnion generates a UNION clause from the given union information.
+//
+// This is similar to BaseQueryBuilder.BuildUnion but without the parenthesis wrapping.
+func (b *SqliteQueryBuilder) BuildUnion(unions []UnionInfo, params Params) string {
+	if len(unions) == 0 {
+		return ""
+	}
+
+	sql := ""
+
+	for i, union := range unions {
+		if i > 0 {
+			sql += " "
+		}
+
+		for k, v := range union.Query.params {
+			params[k] = v
+		}
+
+		u := "UNION"
+		if union.All {
+			u = "UNION ALL"
+		}
+
+		sql += fmt.Sprintf("%v %v", u, union.Query.sql)
+	}
+
+	return sql
+}
+
+// CombineUnion combines the nonempty unionClause with the provided sql string.
+//
+// This is similar to BaseQueryBuilder.CombineUnion but without the parenthesis wrapping.
+func (q *SqliteQueryBuilder) CombineUnion(sql string, unionClause string) string {
+	if unionClause == "" {
+		return sql
+	}
+
+	return fmt.Sprintf("%v %v", sql, unionClause)
+}
+
+// -------------------------------------------------------------------
+
 // SqliteBuilder is the builder for SQLite databases.
 type SqliteBuilder struct {
 	*BaseBuilder
-	qb *BaseQueryBuilder
+	qb *SqliteQueryBuilder
 }
 
 var _ Builder = &SqliteBuilder{}
@@ -22,7 +72,7 @@ var _ Builder = &SqliteBuilder{}
 func NewSqliteBuilder(db *DB, executor Executor) Builder {
 	return &SqliteBuilder{
 		NewBaseBuilder(db, executor),
-		NewBaseQueryBuilder(db),
+		&SqliteQueryBuilder{NewBaseQueryBuilder(db)},
 	}
 }
 

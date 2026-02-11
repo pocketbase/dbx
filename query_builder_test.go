@@ -155,19 +155,19 @@ func TestQB_BuildOrderByAndLimit(t *testing.T) {
 
 	sql := qb.BuildOrderByAndLimit("SELECT *", []string{"name"}, 10, 2)
 	expected := "SELECT * ORDER BY `name` LIMIT 10 OFFSET 2"
-	assert.Equal(t, sql, expected, "t1")
+	assert.Equal(t, expected, sql, "t1")
 
 	sql = qb.BuildOrderByAndLimit("SELECT *", nil, -1, -1)
 	expected = "SELECT *"
-	assert.Equal(t, sql, expected, "t2")
+	assert.Equal(t, expected, sql, "t2")
 
 	sql = qb.BuildOrderByAndLimit("SELECT *", []string{"name"}, -1, -1)
 	expected = "SELECT * ORDER BY `name`"
-	assert.Equal(t, sql, expected, "t3")
+	assert.Equal(t, expected, sql, "t3")
 
 	sql = qb.BuildOrderByAndLimit("SELECT *", nil, 10, -1)
 	expected = "SELECT * LIMIT 10"
-	assert.Equal(t, sql, expected, "t4")
+	assert.Equal(t, expected, sql, "t4")
 }
 
 func TestQB_BuildJoin(t *testing.T) {
@@ -178,24 +178,24 @@ func TestQB_BuildJoin(t *testing.T) {
 	sql := qb.BuildJoin([]JoinInfo{ji}, params)
 	expected := "LEFT JOIN `users` `u` ON id=u.id"
 	assert.Equal(t, sql, expected, "BuildJoin@1")
-	assert.Equal(t, len(params), 1, "len(params)@1")
+	assert.Equal(t, 1, len(params), "len(params)@1")
 
 	params = Params{}
 	ji = JoinInfo{"INNER JOIN", "users", nil}
 	sql = qb.BuildJoin([]JoinInfo{ji}, params)
 	expected = "INNER JOIN `users`"
 	assert.Equal(t, sql, expected, "BuildJoin@2")
-	assert.Equal(t, len(params), 0, "len(params)@2")
+	assert.Equal(t, 0, len(params), "len(params)@2")
 
 	sql = qb.BuildJoin([]JoinInfo{}, nil)
 	expected = ""
-	assert.Equal(t, sql, expected, "BuildJoin@3")
+	assert.Equal(t, expected, sql, "BuildJoin@3")
 
 	ji = JoinInfo{"INNER JOIN", "users", nil}
 	ji2 := JoinInfo{"LEFT JOIN", "posts", nil}
 	sql = qb.BuildJoin([]JoinInfo{ji, ji2}, nil)
 	expected = "INNER JOIN `users` LEFT JOIN `posts`"
-	assert.Equal(t, sql, expected, "BuildJoin@3")
+	assert.Equal(t, expected, sql, "BuildJoin@3")
 }
 
 func TestQB_BuildUnion(t *testing.T) {
@@ -206,23 +206,31 @@ func TestQB_BuildUnion(t *testing.T) {
 	ui := UnionInfo{false, db.NewQuery("SELECT names").Bind(Params{"id": 1})}
 	sql := qb.BuildUnion([]UnionInfo{ui}, params)
 	expected := "UNION (SELECT names)"
-	assert.Equal(t, sql, expected, "BuildUnion@1")
-	assert.Equal(t, len(params), 1, "len(params)@1")
+	assert.Equal(t, expected, sql, "BuildUnion@1")
+	assert.Equal(t, 1, len(params), "len(params)@1")
 
 	params = Params{}
 	ui = UnionInfo{true, db.NewQuery("SELECT names")}
 	sql = qb.BuildUnion([]UnionInfo{ui}, params)
 	expected = "UNION ALL (SELECT names)"
-	assert.Equal(t, sql, expected, "BuildUnion@2")
-	assert.Equal(t, len(params), 0, "len(params)@2")
+	assert.Equal(t, expected, sql, "BuildUnion@2")
+	assert.Equal(t, 0, len(params), "len(params)@2")
 
 	sql = qb.BuildUnion([]UnionInfo{}, nil)
 	expected = ""
-	assert.Equal(t, sql, expected, "BuildUnion@3")
+	assert.Equal(t, expected, sql, "BuildUnion@3")
 
 	ui = UnionInfo{true, db.NewQuery("SELECT names")}
 	ui2 := UnionInfo{false, db.NewQuery("SELECT ages")}
 	sql = qb.BuildUnion([]UnionInfo{ui, ui2}, nil)
 	expected = "UNION ALL (SELECT names) UNION (SELECT ages)"
-	assert.Equal(t, sql, expected, "BuildUnion@4")
+	assert.Equal(t, expected, sql, "BuildUnion@4")
+}
+
+func TestQB_CombineUnion(t *testing.T) {
+	db := getDB()
+	qb := db.QueryBuilder()
+
+	sql := qb.CombineUnion("p1", "p2")
+	assert.Equal(t, "(p1) p2", sql)
 }

@@ -29,6 +29,17 @@ type QueryBuilder interface {
 	BuildOrderByAndLimit(string, []string, int64, int64) string
 	// BuildUnion generates a UNION clause from the given union information.
 	BuildUnion([]UnionInfo, Params) string
+
+	// CombineUnion combines the nonempty unionClause with the provided sql string.
+	//
+	// The unionClause is expected to be the result of BuildUnion.
+	// If the unionClause is an empty string it returns the sql argument unmodified.
+	//
+	// This method exists as a workaround to minimize breaking changes
+	// and to allow different SQL builders to specify for example whether
+	// they support parenthesis around the UNION SQL queries
+	// (SQLite for example will throw a SyntaxError if the UNION parts are wrapped in parenthesis).
+	CombineUnion(sql string, unionClause string) string
 }
 
 // BaseQueryBuilder provides a basic implementation of QueryBuilder.
@@ -188,6 +199,23 @@ func (q *BaseQueryBuilder) BuildUnion(unions []UnionInfo, params Params) string 
 		sql += fmt.Sprintf("%v (%v)", u, union.Query.sql)
 	}
 	return sql
+}
+
+// CombineUnion combines the nonempty unionClause with the provided sql string.
+//
+// The unionClause is expected to be the result of BuildUnion.
+// If the unionClause is an empty string it returns the sql argument unmodified.
+//
+// This method exists as a workaround to minimize breaking changes
+// and to allow different SQL builders to specify for example whether
+// they support parenthesis around the UNION SQL queries
+// (SQLite for example will throw a SyntaxError if the UNION parts are wrapped in parenthesis).
+func (q *BaseQueryBuilder) CombineUnion(sql string, unionClause string) string {
+	if unionClause == "" {
+		return sql
+	}
+
+	return fmt.Sprintf("(%v) %v", sql, unionClause)
 }
 
 var orderRegex = regexp.MustCompile(`\s+((?i)ASC|DESC)$`)

@@ -5,7 +5,7 @@ dbx
 
 > ⚠️ This is a maintained fork of [go-ozzo/ozzo-dbx](https://github.com/go-ozzo/ozzo-dbx) (see [#103](https://github.com/go-ozzo/ozzo-dbx/issues/103)).
 >
-> Currently, the changes are primarily related to better SQLite support and some other minor improvements, implementing [#99](https://github.com/go-ozzo/ozzo-dbx/pull/99), [#100](https://github.com/go-ozzo/ozzo-dbx/pull/100) and [#102](https://github.com/go-ozzo/ozzo-dbx/pull/102).
+> Currently the changes are primarily related to better SQLite support and some other minor improvements. For more details please refer to the [Releases CHANGELOG](https://github.com/pocketbase/dbx/releases).
 
 
 ## Summary

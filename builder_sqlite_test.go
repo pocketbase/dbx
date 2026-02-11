@@ -75,6 +75,43 @@ func TestSqliteBuilder_DropForeignKey(t *testing.T) {
 	assert.NotEqual(t, q.LastError, nil, "t1")
 }
 
+func TestSqliteBuilder_BuildUnion(t *testing.T) {
+	b := getSqliteBuilder()
+	qb := b.QueryBuilder()
+
+	params := Params{}
+	ui := UnionInfo{false, b.NewQuery("SELECT names").Bind(Params{"id": 1})}
+	sql := qb.BuildUnion([]UnionInfo{ui}, params)
+	expected := "UNION SELECT names"
+	assert.Equal(t, expected, sql, "BuildUnion@1")
+	assert.Equal(t, 1, len(params), "len(params)@1")
+
+	params = Params{}
+	ui = UnionInfo{true, b.NewQuery("SELECT names")}
+	sql = qb.BuildUnion([]UnionInfo{ui}, params)
+	expected = "UNION ALL SELECT names"
+	assert.Equal(t, expected, sql, "BuildUnion@2")
+	assert.Equal(t, 0, len(params), "len(params)@2")
+
+	sql = qb.BuildUnion([]UnionInfo{}, nil)
+	expected = ""
+	assert.Equal(t, expected, sql, "BuildUnion@3")
+
+	ui = UnionInfo{true, b.NewQuery("SELECT names")}
+	ui2 := UnionInfo{false, b.NewQuery("SELECT ages")}
+	sql = qb.BuildUnion([]UnionInfo{ui, ui2}, nil)
+	expected = "UNION ALL SELECT names UNION SELECT ages"
+	assert.Equal(t, expected, sql, "BuildUnion@4")
+}
+
+func TestSqliteBuilder_CombineUnion(t *testing.T) {
+	b := getSqliteBuilder()
+	qb := b.QueryBuilder()
+
+	sql := qb.CombineUnion("p1", "p2")
+	assert.Equal(t, "p1 p2", sql)
+}
+
 func getSqliteBuilder() Builder {
 	db := getDB()
 	b := NewSqliteBuilder(db, db.sqlDB)
